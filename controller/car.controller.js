@@ -658,7 +658,9 @@ const getMyAds = async (req, res) => {
 
             "ACTIVE",
 
-            "DEACTIVATED"
+            "DEACTIVATED",
+
+            "SOLD"
 
           ]
 
@@ -984,6 +986,135 @@ const updateCar = async (req, res) => {
   }
 };
 
+// 7. CHANGE LISTING STATUS (ACTIVE / DEACTIVATED / SOLD)
+
+const updateCarStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const seller = req.user.id;
+    const { status } = req.body;
+
+    const allowedStatuses = ["ACTIVE", "DEACTIVATED", "SOLD"];
+
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status"
+      });
+    }
+
+    const car = await Car.findById(id);
+
+    if (!car) {
+      return res.status(404).json({
+        success: false,
+        message: "Vehicle not found"
+      });
+    }
+
+    // OWNERSHIP CHECK
+    if (car.seller.toString() !== seller.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to change this vehicle"
+      });
+    }
+
+    // PENDING PAYMENT LISTINGS CANNOT BE CHANGED
+    if (car.status === "PENDING_PAYMENT") {
+      return res.status(400).json({
+        success: false,
+        message: "Please complete the pending payment first"
+      });
+    }
+
+    // A deactivated listing cannot be switched back on or changed.
+    // The seller has to post the vehicle again as a new listing.
+    if (car.status === "DEACTIVATED") {
+      return res.status(400).json({
+        success: false,
+        message:
+          "A deactivated listing cannot be activated again. Please post it as a new listing."
+      });
+    }
+
+    // An expired listing cannot be switched on for free.
+    // It must go through the paid reactivation.
+    if (
+      status === "ACTIVE" &&
+      car.expiresAt &&
+      car.expiresAt <= new Date()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "This listing has expired. Please reactivate it with payment."
+      });
+    }
+
+    car.status = status;
+
+    const updatedCar = await car.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Listing status updated",
+      car: updatedCar
+    });
+
+  } catch (err) {
+    console.error("UPDATE STATUS ERROR:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to update listing status",
+      error: err.message
+    });
+  }
+};
+
+// 8. DELETE VEHICLE
+
+const deleteCar = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const seller = req.user.id;
+
+    const car = await Car.findById(id);
+
+    if (!car) {
+      return res.status(404).json({
+        success: false,
+        message: "Vehicle not found"
+      });
+    }
+
+    // OWNERSHIP CHECK
+    if (car.seller.toString() !== seller.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to delete this vehicle"
+      });
+    }
+
+    await Car.findByIdAndDelete(id);
+
+    return res.status(200).json({
+      success: true,
+      message: "Listing deleted successfully"
+    });
+
+  } catch (err) {
+    console.error("DELETE VEHICLE ERROR:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to delete vehicle",
+      error: err.message
+    });
+  }
+};
+
 // EXPORT
 
 
@@ -998,6 +1129,11 @@ module.exports = {
   getMyAds,
 
   reactivateCar,
-  updateCar
+
+  updateCar,
+
+  updateCarStatus,
+
+  deleteCar
 
 };

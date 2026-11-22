@@ -9,7 +9,9 @@ const {
   getCarById,
   reactivateCar,
   getMyAds,
-  updateCar
+  updateCar,
+  updateCarStatus,
+  deleteCar,
 } = require("../controller/car.controller");
 
 // Authentication Middleware
@@ -37,9 +39,17 @@ router.get("/my-ads", verifyToken, getMyAds);
 // Login required
 router.put("/reactivate/:id", verifyToken, reactivateCar);
 
+// 6. Change status: ACTIVE / DEACTIVATED / SOLD
+// Login required (only the seller)
+router.put("/:id/status", verifyToken, updateCarStatus);
+
 router.put("/:id", verifyToken, updateCar);
 
-// 6. Get Single Vehicle
+// 7. Delete Listing
+// Login required (only the seller)
+router.delete("/:id", verifyToken, deleteCar);
+
+// 8. Get Single Vehicle
 // Public
 router.get("/:id", getCarById);
 

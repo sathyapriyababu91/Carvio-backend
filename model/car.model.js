@@ -176,6 +176,7 @@ boostPaymentId: {
       enum: [
         "ACTIVE",
         "DEACTIVATED",
+        "SOLD",
         "PENDING_PAYMENT"
       ],
       default: "ACTIVE"
