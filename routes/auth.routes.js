@@ -8,7 +8,9 @@ const {
   loginUser,
   sendOTP,
   verifyOTP,
-  changePassword
+  changePassword,
+  logoutAllDevices,
+  getCurrentUser
 } = require("../controller/auth.controller");
 
 const verifyToken = require("../middleware/auth.middleware");
@@ -58,7 +60,6 @@ router.post(
 );
 
 // EMAIL/PASSWORD LOGIN
-
 router.post(
   "/login",
   loginLimiter,
@@ -66,7 +67,6 @@ router.post(
 );
 
 // SEND OTP
-
 router.post(
   "/send-otp",
   sendOtpLimiter,
@@ -74,7 +74,6 @@ router.post(
 );
 
 // VERIFY OTP
-
 router.post(
   "/verify-otp",
   verifyOtpLimiter,
@@ -82,11 +81,24 @@ router.post(
 );
 
 // CHANGE PASSWORD
-
 router.put(
   "/change-password",
   verifyToken,
   changePassword
+);
+
+// GET CURRENT USER (session check)
+router.get(
+  "/me",
+  verifyToken,
+  getCurrentUser
+);
+
+// LOGOUT ALL DEVICES
+router.post(
+  "/logout-all",
+  verifyToken,
+  logoutAllDevices
 );
 
 module.exports = router;

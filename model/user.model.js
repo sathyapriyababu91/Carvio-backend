@@ -1,4 +1,3 @@
-
 const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema(
@@ -45,6 +44,12 @@ const UserSchema = new mongoose.Schema(
       type: String,
       enum: ["user", "admin"],
       default: "user",
+    },
+
+    // All-devices logout-க்காக token version
+    tokenVersion: {
+      type: Number,
+      default: 0,
     },
 
     // Legacy free listing fields

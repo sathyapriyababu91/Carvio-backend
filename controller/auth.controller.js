@@ -162,11 +162,12 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // Generate JWT Token
+    // Generate JWT Token with tokenVersion
     const token = jwt.sign(
       {
         id: user._id,
-        role: user.role
+        role: user.role,
+        tokenVersion: user.tokenVersion ?? 0
       },
       process.env.JWT_SECRET || "secret_key",
       {
@@ -425,11 +426,12 @@ const verifyOTP = async (req, res) => {
       });
     }
 
-    // Generate JWT Token
+    // Generate JWT Token with tokenVersion
     const token = jwt.sign(
       {
         id: user._id,
-        role: user.role
+        role: user.role,
+        tokenVersion: user.tokenVersion ?? 0
       },
       process.env.JWT_SECRET || "secret_key",
       {
@@ -574,6 +576,72 @@ const changePassword = async (req, res) => {
 
 
 
+// 6. GET CURRENT USER (SESSION CHECK)
+
+
+const getCurrentUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found!"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      user
+    });
+  } catch (err) {
+    console.error("GET CURRENT USER ERROR:", err);
+
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+};
+
+
+
+// 7. LOGOUT ALL DEVICES
+
+
+const logoutAllDevices = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $inc: { tokenVersion: 1 } },
+      { new: true }
+    ).select("_id tokenVersion");
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found!"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Logged out from all devices successfully!"
+    });
+  } catch (err) {
+    console.error("LOGOUT ALL DEVICES ERROR:", err);
+
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+};
+
+
+
 // EXPORT
 
 
@@ -582,5 +650,7 @@ module.exports = {
   loginUser,
   sendOTP,
   verifyOTP,
-  changePassword
+  changePassword,
+  getCurrentUser,
+  logoutAllDevices
 };
